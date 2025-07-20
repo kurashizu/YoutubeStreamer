@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>YouTube Stream Manager</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f4f4f4;
+      color: #333;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    h1, h2 {
+      color: #0056b3;
+    }
+    .header-container {
+      margin-bottom: 20px;
+    }
+    .sub-header-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+    }
+    .header-container h1 {
+      margin: 0;
+    }
+    .lang-selector-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .lang-button {
+      background: none;
+      border: none;
+      padding: 0;
+      margin: 0;
+      font-size: 1rem;
+      color: #007bff;
+      text-decoration: underline;
+    }
+    .lang-button.active {
+      color: #333;
+      text-decoration: none;
+      font-weight: bold;
+      cursor: default;
+    }
+    .input-group {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    input[type="text"] {
+      flex-grow: 1;
+      padding: 10px;
+      margin-right: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    select {
+      padding: 10px;
+      border: 1px solid #ddd;
+      box-sizing: border-box;
+    }
+    .input-section > label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+    }
+    button {
+      padding: 10px 15px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      white-space: nowrap;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    button:disabled {
+      background-color: #6c757d;
+      cursor: not-allowed;
+    }
+    button#terminateButton {
+      background-color: #dc3545;
+    }
+    button#terminateButton:hover {
+      background-color: #c82333;
+    }
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .section-header h2 {
+      margin: 0;
+    }
+    .copy-button-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+    .copy-button-group button {
+      background-color: #28a745;
+    }
+    .copy-button-group button:hover {
+      background-color: #218838;
+    }
+    #playlistQueue {
+      list-style-type: decimal;
+      padding-left: 20px;
+      background-color: #f8f9fa;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 10px;
+      min-height: 50px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    #playlistQueue li {
+      padding: 8px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      word-break: break-all;
+    }
+    #playlistQueue li:last-child {
+      border-bottom: none;
+    }
+    #playlistQueue .remove-item-btn {
+      background-color: #ffc107;
+      color: #212529;
+      border: none;
+      padding: 4px 8px;
+      font-size: 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-left: 10px;
+      white-space: nowrap;
+    }
+    #statusDisplay {
+      background-color: #e2e6ea;
+      border: 1px solid #ced4da;
+      padding: 15px;
+      min-height: 150px;
+      max-height: 400px;
+      overflow-y: auto;
+      border-radius: 4px;
+      margin-top: 20px;
+      white-space: pre-wrap;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 14px;
+      color: #212529;
+    }
+    .message {
+      margin-top: 15px;
+      padding: 10px;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+    .success {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .error {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    .help-link {
+      background: none;
+      border: none;
+      color: #007bff;
+      cursor: pointer;
+      text-decoration: underline;
+      font-size: 1rem;
+      padding: 0;
+    }
+    .help-link:hover {
+      color: #0056b3;
+      background: none;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.5);
+    }
+    .modal-content {
+      background-color: #fefefe;
+      margin: 10% auto;
+      padding: 20px 30px;
+      border: 1px solid #888;
+      width: 80%;
+      max-width: 700px;
+      border-radius: 8px;
+      position: relative;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+    .close-button {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .close-button:hover, .close-button:focus {
+      color: black;
+    }
+    .endpoint-selector-wrapper {
+      display: flex;
+      align-items: center;
+      margin-top: 10px;
+    }
+    .endpoint-selector-wrapper label {
+      margin-right: 10px;
+      font-weight: 500;
+    }
+    .endpoint-selector-wrapper select {
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header-container">
+      <h1><span data-i18n="pageHeader">YouTube Stream Manager</span> <span id="versionDisplay"></span></h1>
+      <div class="sub-header-container">
+        <button id="helpButton" class="help-link" data-i18n="howToUse">How to use</button>
+        <div class="lang-selector-wrapper">
+          <button class="lang-button" data-lang="en">English</button>
+          <button class="lang-button" data-lang="zh">简体中文</button>
+          <button class="lang-button" data-lang="zh-TW">繁體中文</button>
+          <button class="lang-button" data-lang="ja">日本語</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-section">
+      <label for="urlInput" data-i18n="videoUrlLabel">YouTube Video URL:</label>
+      <div class="input-group">
+        <input type="text" id="urlInput" data-i18n-placeholder="urlPlaceholder" placeholder="Enter YouTube URL here">
+        <button id="pasteButton" data-i18n="paste">Paste</button>
+        <button id="addToQueueButton" data-i18n="addToQueue">Add to Queue</button>
+      </div>
+      <!-- 只保留这一组端点/bitrate/audioonly选择 -->
+      <div class="input-group" style="gap: 10px; margin-bottom: 16px;">
+        <label for="endpointSelector" data-i18n="endpointLabel" style="margin-right: 8px;"><b>Endpoint:</b></label>
+        <select id="endpointSelector">
+          <option value="yt" data-i18n="endpointPrimary">primary</option>
+          <option value="yt_aux1" data-i18n="endpointAux1">yt_aux1</option>
+          <option value="yt_aux2" data-i18n="endpointAux2">yt_aux2</option>
+        </select>
+        <label for="bitrateInput" data-i18n="bitrateLabel" style="margin: 0 8px 0 16px;">Target Bitrate (bps):</label>
+        <select id="bitrateInput" style="width: 160px;">
+          <option value="600k" data-i18n="bitrateLow">600k (Low Quality)</option>
+          <option value="1200k" data-i18n="bitrateStd1">1.2m (Standard Quality)</option>
+          <option value="2400k" data-i18n="bitrateStd2">2.4m (Standard Quality)</option>
+          <option value="4800k" data-i18n="bitrateHigh1">4.8m (High Quality)</option>
+          <option value="10000k" data-i18n="bitrateHigh2">10m (High Quality)</option>
+        </select>
+        <input type="checkbox" id="audioOnlyCheckbox" style="margin-left: 16px; margin-right: 6px; transform: scale(1.2); cursor: pointer;">
+        <label for="audioOnlyCheckbox" data-i18n="audioOnlyLabel" style="cursor: pointer; user-select: none;">Audio Only Mode</label>
+      </div>
+    </div>
+
+    <hr>
+
+    <div id="actionMessage" class="message" style="display: none;"></div>
+
+    <hr>
+
+    <h2 data-i18n="playlistQueueTitle">Playlist Queue</h2>
+    <ol id="playlistQueue"><li data-i18n="loadingQueue">Loading queue...</li></ol>
+
+    <hr>
+    <div class="section-header">
+      <h2 data-i18n="streamStatusTitle">Stream Status</h2>
+      <button id="terminateButton" data-i18n="terminate">Terminate Stream</button>
+    </div>
+    <div id="statusMessage" class="message"></div>
+    <pre id="statusDisplay" data-i18n="fetchingStatus">Fetching status...</pre>
+
+    <hr>
+
+    <h2 data-i18n="copyUrlsTitle">Copy Stream URLs</h2>
+    <div class="copy-button-group">
+      <button id="copyJpUrlButton">Japan</button>
+      <button id="copyAuUrlButton">Australia</button>
+      <button id="copyCfUrlButton">CloudflareAnycast</button>
+    </div>
+
+    <hr>
+
+    <footer style="text-align: center; padding: 10px 0; font-size: 0.9em; color: #6c757d;">
+      <p style="margin: 0;">
+        Author: <a href="https://www.022025.xyz" target="_blank" rel="noopener noreferrer">Kurashizu</a>,
+        Powered by SRS(Simple Realtime Server), ffmpeg.
+      </p>
+      <p id="versionFooter" style="margin: 5px 0 0;"></p>
+    </footer>
+
+    <!-- Help Modal -->
+    <div id="helpModal" class="modal">
+      <div class="modal-content">
+        <span id="closeHelpButton" class="close-button">&times;</span>
+        <h2 data-i18n="helpTitle">How to use</h2>
+        <div id="helpContent">
+          <!-- Content will be injected by JavaScript -->
+        </div>
+      </div>
+    </div>
+
+    <!-- 密码弹窗 -->
+    <div id="passwordModal" class="modal">
+      <div class="modal-content" style="max-width: 350px;">
+        <span id="closePasswordModal" class="close-button">&times;</span>
+        <h2>Enter Password</h2>
+        <input type="password" id="passwordInput" placeholder="Password" style="width: 100%; margin-bottom: 12px; padding: 8px;">
+        <button id="passwordSubmit" style="width: 100%;">Submit</button>
+        <div id="passwordError" style="color: #dc3545; margin-top: 8px; display: none;">Wrong password!</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  const VERSION = 'v1.4';
+  const API = 'https://home.022025.xyz/ytapi';
+
+  // 动态获取 m3u8 链接
+  function getJpUrl() {
+    return `https://srsjp.022025.xyz/live/${ENDPOINT}.m3u8`;
+  }
+  function getAuUrl() {
+    return `https://srs.022025.xyz/live/${ENDPOINT}.m3u8`;
+  }
+  function getCfUrl() {
+    return `https://cfsrs.022025.xyz/live/${ENDPOINT}.m3u8`;
+  }
+
+  // 全局 endpoint 变量，初始值从 localStorage 读取
+  let ENDPOINT = localStorage.getItem('ytStreamManagerEndpoint') || 'yt_aux1';
+  let ytUnlocked = localStorage.getItem('ytStreamManagerYtUnlocked') === 'true';
+
+  const translations = {
+      en: {
+        pageTitle: "YouTube Stream Manager",
+        pageHeader: "YouTube Stream Manager",
+        languageLabel: "Language:",
+        videoUrlLabel: "YouTube Video URL:",
+        urlPlaceholder: "Enter YouTube URL here",
+        paste: "Paste",
+        addToQueue: "Add to Queue",
+        bitrateLabel: "Target Bitrate (bps):",
+        bitrateLow: "600k (Low Quality)",
+        bitrateStd1: "1.2m (Standard Quality)",
+        bitrateStd2: "2.4m (Standard Quality)",
+        bitrateHigh1: "4.8m (High Quality)",
+        bitrateHigh2: "10m (High Quality)",
+        audioOnlyLabel: "Audio Only Mode",
+        terminate: "Terminate Stream",
+        playlistQueueTitle: "Playlist Queue",
+        loadingQueue: "Loading queue...",
+        streamStatusTitle: "Stream Status",
+        fetchingStatus: "Fetching status...",
+        copyUrlsTitle: "Copy Stream URLs",
+        copySuccess: "Copied to clipboard!",
+        copyFail: "Copy failed. Copy manually.",
+        queueEmpty: "Queue is empty.",
+        remove: "Remove",
+        noStatus: "No status available.",
+        streamRunning: "Stream is running...",
+        streamStopped: "Stream stopped. Exit Code: {code}",
+        streamNotRunning: "Stream is not running.",
+        unknownApiError: "An unknown API error occurred.",
+        statusFetchError: "Error fetching status: {err}",
+        itemRemoved: "Item removed from queue.",
+        itemRemoveError: "Error removing item: {message}",
+        enterUrl: "Enter a URL.",
+        addingToQueue: "Adding to queue... (this may take a moment)",
+        addedToQueue: "Added to queue.",
+        addError: "Error adding to queue: {message}",
+        terminateFail: "Terminate failed: {message}",
+        pasted: "Pasted!",
+        pasteFail: "Paste failed.",
+        howToUse: "How to use",
+        helpTitle: "How to use this page",
+        helpIntro: "This page allows you to create a continuous live stream from a queue of YouTube videos.",
+        helpStep1Title: "Select Bitrate",
+        helpStep1Desc: "Choose a desired stream quality from the dropdown. This setting is applied to each video when it's added to the queue.",
+        helpStep2Title: "Add Video",
+        helpStep2Desc: "Paste a YouTube video URL into the input box and click 'Add to Queue'. The stream will start automatically if the queue was empty.",
+        helpStep3Title: "Manage Queue",
+        helpStep3Desc: "Added videos appear in the 'Playlist Queue'. You can add more videos or remove them using the 'Remove' button.",
+        helpStep4Title: "Monitor Status",
+        helpStep4Desc: "The 'Stream Status' box shows the live output from the streaming process, including uptime and any errors.",
+        helpStep5Title: "Terminate Stream",
+        helpStep5Desc: "Click this button to stop the current stream immediately. The auto-play worker will be stopped.",
+        helpStep6Title: "Copy Stream URL",
+        helpStep6Desc: "Use the green buttons at the bottom to copy the M3U8 stream URL for your player (e.g., VRChat, OBS).",
+        endpointLabel: "Endpoint:",
+        endpointPrimary: "primary",
+        endpointAux1: "yt_aux1",
+        endpointAux2: "yt_aux2"
+      },
+      zh: {
+        pageTitle: "YouTube直播流管理器",
+        pageHeader: "YouTube直播流管理器",
+        languageLabel: "语言:",
+        videoUrlLabel: "YouTube视频链接:",
+        urlPlaceholder: "在此输入YouTube链接",
+        paste: "粘贴",
+        addToQueue: "添加到队列",
+        bitrateLabel: "目标比特率 (bps):",
+        bitrateLow: "600k (低质量)",
+        bitrateStd1: "1.2m (标准质量)",
+        bitrateStd2: "2.4m (标准质量)",
+        bitrateHigh1: "4.8m (高质量)",
+        bitrateHigh2: "10m (高质量)",
+        audioOnlyLabel: "纯音频模式",
+        terminate: "终止直播流",
+        playlistQueueTitle: "播放列表队列",
+        loadingQueue: "正在加载队列...",
+        streamStatusTitle: "直播流状态",
+        fetchingStatus: "正在获取状态...",
+        copyUrlsTitle: "复制直播流地址",
+        copySuccess: "已复制到剪贴板！",
+        copyFail: "复制失败，请手动复制。",
+        queueEmpty: "队列为空。",
+        remove: "移除",
+        noStatus: "无可用状态。",
+        streamRunning: "直播流正在运行...",
+        streamStopped: "直播流已停止。退出代码: {code}",
+        streamNotRunning: "直播流未运行。",
+        unknownApiError: "发生未知API错误。",
+        statusFetchError: "获取状态时出错: {err}",
+        itemRemoved: "已从队列中移除。",
+        itemRemoveError: "移除项目时出错: {message}",
+        enterUrl: "请输入链接。",
+        addingToQueue: "正在添加到队列... (可能需要一些时间)",
+        addedToQueue: "已添加到队列。",
+        addError: "添加到队列时出错: {message}",
+        terminateFail: "终止失败: {message}",
+        pasted: "已粘贴！",
+        pasteFail: "粘贴失败。",
+        howToUse: "使用说明",
+        helpTitle: "如何使用此页面",
+        helpIntro: "此页面允许您通过一个YouTube视频队列来创建一个连续的直播流。",
+        helpStep1Title: "选择比特率",
+        helpStep1Desc: "从下拉菜单中选择期望的直播流质量。该设置会在每个视频被添加到队列时应用。",
+        helpStep2Title: "添加视频",
+        helpStep2Desc: "将YouTube视频链接粘贴到输入框中，然后点击“添加到队列”。如果队列为空，直播将自动开始。",
+        helpStep3Title: "管理队列",
+        helpStep3Desc: "已添加的视频会显示在“播放列表队列”。您可以继续添加更多视频，或使用“移除”按钮删除它们。",
+        helpStep4Title: "监控状态",
+        helpStep4Desc: "“直播流状态”框会显示直播进程的实时输出，包括运行时间和任何错误信息。",
+        helpStep5Title: "终止直播流",
+        helpStep5Desc: "点击此按钮可立即停止当前的直播流。自动播放进程也将停止。",
+        helpStep6Title: "复制直播流地址",
+        helpStep6Desc: "使用底部的绿色按钮复制M3U8直播流地址，以便在您的播放器（如VRChat、OBS）中使用。",
+        endpointLabel: "端点：",
+        endpointPrimary: "主线路",
+        endpointAux1: "辅助1",
+        endpointAux2: "辅助2"
+      },
+      "zh-TW": {
+        pageTitle: "YouTube 直播串流管理員",
+        pageHeader: "YouTube直播流管理器",
+        languageLabel: "語言:",
+        videoUrlLabel: "YouTube影片連結:",
+        urlPlaceholder: "在此輸入YouTube連結",
+        paste: "貼上",
+        addToQueue: "加入佇列",
+        bitrateLabel: "目標位元率 (bps):",
+        bitrateLow: "600k (低畫質)",
+        bitrateStd1: "1.2m (標準品質)",
+        bitrateStd2: "2.4m (標準品質)",
+        bitrateHigh1: "4.8m (高品質)",
+        bitrateHigh2: "10m (高品質)",
+        audioOnlyLabel: "純音訊模式",
+        terminate: "終止直播串流",
+        playlistQueueTitle: "播放清單佇列",
+        loadingQueue: "正在載入佇列...",
+        streamStatusTitle: "串流狀態",
+        fetchingStatus: "正在取得狀態...",
+        copyUrlsTitle: "複製串流位址",
+        copySuccess: "已複製到剪貼簿！",
+        copyFail: "複製失敗，請手動複製。",
+        queueEmpty: "佇列為空。",
+        remove: "移除",
+        noStatus: "沒有可用狀態。",
+        streamRunning: "直播串流正在執行中...",
+        streamStopped: "串流已停止。退出代碼: {code}",
+        streamNotRunning: "串流未執行。",
+        unknownApiError: "發生未知 API 錯誤。",
+        statusFetchError: "取得狀態時發生錯誤: {err}",
+        itemRemoved: "已從佇列中移除。",
+        itemRemoveError: "移除項目時發生錯誤: {message}",
+        enterUrl: "請輸入連結。",
+        addingToQueue: "正在加入佇列...(可能需要一些時間)",
+        addedToQueue: "已加入佇列。",
+        addError: "加入佇列時發生錯誤: {message}",
+        terminateFail: "終止失敗: {message}",
+        pasted: "已貼上！",
+        pasteFail: "貼上失敗。",
+        howToUse: "使用說明",
+        helpTitle: "如何使用此頁面",
+        helpIntro: "此頁面允許您透過一個YouTube影片佇列來建立一個連續的直播串流。",
+        helpStep1Title: "選擇位元率",
+        helpStep1Desc: "從下拉式選單中選擇期望的直播串流品質。此設定會在每個影片被加入佇列時套用。",
+        helpStep2Title: "新增影片",
+        helpStep2Desc: "將YouTube影片連結貼到輸入框中，然後點擊「加入佇列」。如果佇列是空的，直播將自動開始。",
+        helpStep3Title: "管理佇列",
+        helpStep3Desc: "已新增的影片會顯示在「播放清單佇列」中。您可以繼續新增更多影片，或使用「移除」按鈕刪除它們。",
+        helpStep4Title: "監控狀態",
+        helpStep4Desc: "「串流狀態」框會顯示直播程序的即時輸出，包括執行時間和任何錯誤訊息。",
+        helpStep5Title: "終止串流",
+        helpStep5Desc: "點擊此按鈕可立即停止目前的直播串流。自動播放程序也將停止。",
+        helpStep6Title: "複製串流網址",
+        helpStep6Desc: "使用底部的綠色按鈕複製M3U8直播串流網址，以便在您的播放器（如VRChat、OBS）中使用。",
+        endpointLabel: "端點：",
+        endpointPrimary: "主線路",
+        endpointAux1: "輔助1",
+        endpointAux2: "輔助2"
+      },
+      ja: {
+        pageTitle: "YouTubeストリームマネージャー",
+        pageHeader: "YouTubeストリームマネージャー",
+        languageLabel: "言語:",
+        videoUrlLabel: "YouTube動画URL:",
+        urlPlaceholder: "ここにYouTubeのURLを入力",
+        paste: "貼り付け",
+        addToQueue: "キューに追加",
+        bitrateLabel: "目標ビットレート (bps):",
+        bitrateLow: "600k (低画質)",
+        bitrateStd1: "1.2m (標準画質)",
+        bitrateStd2: "2.4m (標準画質)",
+        bitrateHigh1: "4.8m (高画質)",
+        bitrateHigh2: "10m (高画質)",
+        audioOnlyLabel: "音声のみモード",
+        terminate: "ストリームを終了",
+        playlistQueueTitle: "プレイリストキュー",
+        loadingQueue: "キューを読み込み中...",
+        streamStatusTitle: "ストリームステータス",
+        fetchingStatus: "ステータスを取得中...",
+        copyUrlsTitle: "ストリームURLをコピー",
+        copySuccess: "クリップボードにコピーしました！",
+        copyFail: "コピーに失敗しました。手動でコピーしてください。",
+        queueEmpty: "キューは空です。",
+        remove: "削除",
+        noStatus: "利用可能なステータスはありません。",
+        streamRunning: "ストリームは実行中です...",
+        streamStopped: "ストリームが停止しました。終了コード: {code}",
+        streamNotRunning: "ストリームは実行されていません。",
+        unknownApiError: "不明なAPIエラーが発生しました。",
+        statusFetchError: "ステータス取得エラー: {err}",
+        itemRemoved: "キューから削除しました。",
+        itemRemoveError: "削除エラー: {message}",
+        enterUrl: "URLを入力してください。",
+        addingToQueue: "キューに追加中...(少し時間がかかる場合があります)",
+        addedToQueue: "キューに追加されました。",
+        addError: "キュー追加エラー: {message}",
+        terminateFail: "終了失敗: {message}",
+        pasted: "貼り付けました！",
+        pasteFail: "貼り付けに失敗しました。",
+        howToUse: "使い方",
+        helpTitle: "このページの使い方",
+        helpIntro: "このページでは、YouTube動画のキューから連続的なライブストリームを作成できます。",
+        helpStep1Title: "ビットレートの選択",
+        helpStep1Desc: "ドロップダウンから希望のストリーム品質を選択します。この設定は、各ビデオがキューに追加されるときに適用されます。",
+        helpStep2Title: "動画の追加",
+        helpStep2Desc: "YouTube動画のURLを入力ボックスに貼り付け、「キューに追加」をクリックします。キューが空の場合、ストリームは自動的に開始されます。",
+        helpStep3Title: "キューの管理",
+        helpStep3Desc: "追加された動画は「プレイリストキュー」に表示されます。さらに動画を追加したり、「削除」ボタンで削除したりできます。",
+        helpStep4Title: "ステータスの監視",
+        helpStep4Desc: "「ストリームステータス」ボックスには、稼働時間やエラーなど、ストリーミングプロセスのライブ出力が表示されます。",
+        helpStep5Title: "ストリームの終了",
+        helpStep5Desc: "このボタンをクリックすると、現在のストリームが直ちに停止します。自動再生ワーカーも停止します。",
+        helpStep6Title: "ストリームURLのコピー",
+        helpStep6Desc: "下部にある緑色のボタンを使用して、プレーヤー（VRChat、OBSなど）用のM3U8ストリームURLをコピーします。",
+        endpointLabel: "エンドポイント：",
+        endpointPrimary: "プライマリ",
+        endpointAux1: "補助1",
+        endpointAux2: "補助2"
+      }
+    };
+
+
+    const el = id => document.getElementById(id);
+
+    const ui = {
+      urlInput: el('urlInput'),
+      pasteButton: el('pasteButton'),
+      addButton: el('addToQueueButton'),
+      bitrate: el('bitrateInput'),
+      audioOnlyCheckbox: el('audioOnlyCheckbox'),
+      terminate: el('terminateButton'),
+      actionMessage: el('actionMessage'),
+      statusDisplay: el('statusDisplay'),
+      statusMessage: el('statusMessage'),
+      playlist: el('playlistQueue'),
+      copyJp: el('copyJpUrlButton'),
+      copyAu: el('copyAuUrlButton'),
+      copyCf: el('copyCfUrlButton'),
+      helpButton: el('helpButton'),
+      helpModal: el('helpModal'),
+      closeHelpButton: el('closeHelpButton'),
+      helpContent: el('helpContent'),
+      versionDisplay: el('versionDisplay'),
+      versionFooter: el('versionFooter')
+    };
+
+    const state = {
+      statusTimer: null,
+      actionMessageTimer: null,
+      currentLang: 'en'
+    };
+    
+    function getTranslatedString(key, replacements = {}) {
+      let str = translations[state.currentLang][key] || key;
+      for (const placeholder in replacements) {
+        str = str.replace(`{${placeholder}}`, replacements[placeholder]);
+      }
+      return str;
+    }
+
+    function showMsg(key, type = '', replacements = {}) {
+      ui.actionMessage.textContent = getTranslatedString(key, replacements);
+      ui.actionMessage.className = `message ${type}`;
+      ui.actionMessage.style.display = 'block';
+      clearTimeout(state.actionMessageTimer);
+      state.actionMessageTimer = setTimeout(() => {
+        ui.actionMessage.style.display = 'none';
+      }, 3000);
+    }
+
+    async function copyToClipboard(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        showMsg('copySuccess', 'success');
+      } catch {
+        showMsg('copyFail', 'error');
+      }
+    }
+
+    function updateQueue(list) {
+      ui.playlist.innerHTML = '';
+      if (!list || !list.length) {
+        ui.playlist.innerHTML = `<li>${getTranslatedString('queueEmpty')}</li>`;
+        return;
+      }
+      list.forEach((item, i) => {
+        const li = document.createElement('li');
+        const titleText = document.createTextNode(item);
+        li.appendChild(titleText);
+        const btn = document.createElement('button');
+        btn.textContent = getTranslatedString('remove');
+        btn.className = 'remove-item-btn';
+        btn.onclick = () => handleRemoveItem(i);
+        li.appendChild(btn);
+        ui.playlist.appendChild(li);
+      });
+    }
+
+    function updateStatus(runner) {
+      ui.statusDisplay.textContent = runner.output || getTranslatedString('noStatus');
+      const statusText = runner.running ? getTranslatedString('streamRunning') :
+        (runner.code != null ? getTranslatedString('streamStopped', { code: runner.code }) : getTranslatedString('streamNotRunning'));
+      ui.statusMessage.className = `message ${runner.running ? 'success' : (runner.code === 0 ? 'success' : 'error')}`;
+      ui.statusMessage.textContent = statusText;
+      ui.terminate.disabled = !runner.running;
+    }
+
+    /**
+     * A robust, centralized API fetch handler.
+     * @param {string} endpoint - The API endpoint to call (e.g., '/status').
+     * @param {RequestInit} [options] - Optional fetch options.
+     * @returns {Promise<any>} - A promise that resolves with the JSON data.
+     */
+    async function api(endpoint, options) {
+      // 判断 endpoint 参数是否已存在
+      let url = `${API}${endpoint}`;
+      if (url.indexOf('?') === -1) {
+        url += `?endpoint=${encodeURIComponent(ENDPOINT)}`;
+      } else if (!/[\?&]endpoint=/.test(url)) {
+        url += `&endpoint=${encodeURIComponent(ENDPOINT)}`;
+      }
+      const response = await fetch(url, options);
+      const data = await response.json();
+      if (!response.ok) {
+        // If the server returned an error (4xx, 5xx), throw an error
+        // with the message from the response body.
+        throw new Error(data.error || getTranslatedString('unknownApiError'));
+      }
+      return data;
+    }
+
+    async function fetchAndRenderStatus() {
+      try {
+        const data = await api('/status');
+        updateQueue(data.playlist.queue);
+        updateStatus(data.runner);
+      } catch (err) {
+        ui.statusDisplay.textContent = getTranslatedString('statusFetchError', { err });
+        // Stop polling on critical error to avoid spamming requests
+        clearInterval(state.statusTimer);
+      }
+    }
+
+    function startPolling() {
+      fetchAndRenderStatus();
+      clearInterval(state.statusTimer);
+      state.statusTimer = setInterval(fetchAndRenderStatus, 2000);
+    }
+
+    async function handleRemoveItem(index) {
+      try {
+        await api(`/dequeue?index=${index}`);
+        showMsg('itemRemoved', 'success');
+        fetchAndRenderStatus(); // Refresh state after successful removal
+      } catch (error) {
+        showMsg('itemRemoveError', 'error', { message: error.message });
+      }
+    }
+
+    async function handleAddItem() {
+      const url = ui.urlInput.value.trim();
+      if (!url) return showMsg('enterUrl', 'error');
+      const bitrate = ui.bitrate.value;
+      const audioOnly = ui.audioOnlyCheckbox.checked;
+      
+      showMsg('addingToQueue', '');
+      ui.addButton.disabled = true; // Prevent double-clicking
+
+      try {
+        let apiUrl = `/enqueue?url=${encodeURIComponent(url)}&bitrate=${bitrate}`;
+        if (audioOnly) {
+          apiUrl += '&audioOnly=true';
+        }
+        const data = await api(apiUrl);
+        showMsg(data.message ? 'addedToQueue' : 'addedToQueue', 'success'); // API message might be better, but for i18n we use key
+        ui.urlInput.value = '';
+        fetchAndRenderStatus();
+      } catch (error) {
+        showMsg('addError', 'error', { message: error.message });
+      } finally {
+        ui.addButton.disabled = false;
+      }
+    }
+
+    async function handleTerminate() {
+      ui.terminate.disabled = true;
+      try {
+        const data = await api('/terminate');
+        showMsg(data.message, 'success'); // Keep original message as it's from backend
+        // Wait a moment for the process to die before refreshing
+        setTimeout(fetchAndRenderStatus, 500);
+      } catch (error) {
+        showMsg('terminateFail', 'error', { message: error.message });
+        ui.terminate.disabled = false; // Re-enable if it failed
+      }
+    }
+
+    // 全局 bitrate 选项更新函数
+    function updateBitrateOptions() {
+      const bitrateInput = document.getElementById('bitrateInput');
+      const endpoint = ENDPOINT;
+      // 允许所有 bitrate
+      const allBitrates = [
+        { value: "600k", label: "bitrateLow" },
+        { value: "1200k", label: "bitrateStd1" },
+        { value: "2400k", label: "bitrateStd2" },
+        { value: "4800k", label: "bitrateHigh1" },
+        { value: "10000k", label: "bitrateHigh2" }
+      ];
+      // 只允许 1.2m 和 2.4m
+      const limitedBitrates = [
+        { value: "1200k", label: "bitrateStd1" },
+        { value: "2400k", label: "bitrateStd2" }
+      ];
+      // 清空并重建选项
+      bitrateInput.innerHTML = '';
+      const useAll = endpoint === 'yt';
+      (useAll ? allBitrates : limitedBitrates).forEach(opt => {
+        const option = document.createElement('option');
+        option.value = opt.value;
+        option.setAttribute('data-i18n', opt.label);
+        option.textContent = translations[state.currentLang][opt.label] || opt.value;
+        bitrateInput.appendChild(option);
+      });
+      // 默认选中第一个
+      bitrateInput.value = useAll ? "1200k" : "1200k";
+    }
+
+    // 密码弹窗逻辑
+    function showPasswordModal() {
+      document.getElementById('passwordModal').style.display = 'block';
+      document.getElementById('passwordInput').value = '';
+      document.getElementById('passwordError').style.display = 'none';
+    }
+    function hidePasswordModal() {
+      document.getElementById('passwordModal').style.display = 'none';
+    }
+
+    function checkYtAccess(callback) {
+      if (ytUnlocked) {
+        callback();
+        return;
+      }
+      showPasswordModal();
+      document.getElementById('passwordSubmit').onclick = () => {
+        const val = document.getElementById('passwordInput').value;
+        if (val === 'cxk114514') {
+          ytUnlocked = true;
+          localStorage.setItem('ytStreamManagerYtUnlocked', 'true');
+          hidePasswordModal();
+          callback();
+        } else {
+          document.getElementById('passwordError').style.display = 'block';
+        }
+      };
+      document.getElementById('closePasswordModal').onclick = hidePasswordModal;
+    }
+
+    function handleEndpointChange(newEndpoint) {
+      if (newEndpoint === 'yt') {
+        // 记录切换前的端点
+        const prevEndpoint = ENDPOINT;
+        checkYtAccess(() => {
+          ENDPOINT = 'yt';
+          localStorage.setItem('ytStreamManagerEndpoint', ENDPOINT);
+          updateBitrateOptions();
+          fetchAndRenderStatus();
+          document.getElementById('endpointSelector').value = 'yt';
+        });
+        // 如果密码弹窗被关闭且未解锁，则回退端点
+        document.getElementById('closePasswordModal').onclick = () => {
+          hidePasswordModal();
+          document.getElementById('endpointSelector').value = prevEndpoint;
+        };
+        // 如果密码错误，也回退端点
+        document.getElementById('passwordSubmit').onclick = () => {
+          const val = document.getElementById('passwordInput').value;
+          if (val === 'cxk114514') {
+            ytUnlocked = true;
+            localStorage.setItem('ytStreamManagerYtUnlocked', 'true');
+            hidePasswordModal();
+            ENDPOINT = 'yt';
+            localStorage.setItem('ytStreamManagerEndpoint', ENDPOINT);
+            updateBitrateOptions();
+            fetchAndRenderStatus();
+            document.getElementById('endpointSelector').value = 'yt';
+          } else {
+            document.getElementById('passwordError').style.display = 'block';
+            // 密码错误时回退端点
+            document.getElementById('endpointSelector').value = prevEndpoint;
+          }
+        };
+      } else {
+        ENDPOINT = newEndpoint;
+        localStorage.setItem('ytStreamManagerEndpoint', ENDPOINT);
+        updateBitrateOptions();
+        fetchAndRenderStatus();
+      }
+    }
+
+    function init() {
+      ui.addButton.onclick = handleAddItem;
+      ui.terminate.onclick = handleTerminate;
+      ui.copyJp.onclick = () => copyToClipboard(getJpUrl());
+      ui.copyAu.onclick = () => copyToClipboard(getAuUrl());
+      ui.copyCf.onclick = () => copyToClipboard(getCfUrl());
+
+      // Endpoint 选择器联动
+      const endpointSelector = document.getElementById('endpointSelector');
+      if (endpointSelector) {
+        endpointSelector.value = ENDPOINT;
+        updateBitrateOptions();
+        endpointSelector.onchange = () => {
+          handleEndpointChange(endpointSelector.value);
+        };
+      }
+
+      // 密码弹窗关闭
+      document.getElementById('closePasswordModal').onclick = hidePasswordModal;
+
+      // Help Modal Listeners
+      ui.helpButton.onclick = () => { ui.helpModal.style.display = 'block'; };
+      ui.closeHelpButton.onclick = () => { ui.helpModal.style.display = 'none'; };
+      window.onclick = (event) => {
+        if (event.target == ui.helpModal) {
+          ui.helpModal.style.display = 'none';
+        }
+      };
+
+      ui.versionDisplay.textContent = VERSION;
+      ui.versionFooter.textContent = `Version ${VERSION}`;
+      ui.pasteButton.onclick = async () => {
+        try {
+          ui.urlInput.value = await navigator.clipboard.readText();
+          showMsg('pasted', 'success');
+        } catch {
+          showMsg('pasteFail', 'error');
+        }
+      };
+      
+      document.querySelectorAll('.lang-button').forEach(button => {
+        button.onclick = () => setLanguage(button.getAttribute('data-lang'));
+      });
+      
+      let savedLang = localStorage.getItem('ytStreamManagerLang') || 'en';
+      if (!translations[savedLang]) {
+        savedLang = 'en'; // Fallback to English if saved lang is invalid
+      }
+      setLanguage(savedLang);
+      startPolling();
+    }
+    
+    function setLanguage(lang) {
+      state.currentLang = lang;
+      localStorage.setItem('ytStreamManagerLang', lang);
+
+      document.querySelectorAll('.lang-button').forEach(button => {
+        button.classList.remove('active');
+        if (button.getAttribute('data-lang') === lang) {
+          button.classList.add('active');
+        }
+      });
+      
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (translations[lang][key]) {
+          el.textContent = translations[lang][key];
+        }
+      });
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        el.placeholder = getTranslatedString(key);
+      });
+      // 刷新 select/option 的多语言
+      document.querySelectorAll('option[data-i18n]').forEach(opt => {
+        const key = opt.getAttribute('data-i18n');
+        if (translations[lang][key]) {
+          opt.textContent = translations[lang][key];
+        }
+      });
+      document.title = `${getTranslatedString('pageTitle')} ${VERSION}`;
+      updateBitrateOptions();
+      updateHelpContent(lang);
+    }
+
+    function updateHelpContent(lang) {
+      const t = (key) => translations[lang][key] || key;
+
+      ui.helpContent.innerHTML = `
+        <p>${t('helpIntro')}</p>
+        <ul>
+            <li><strong>${t('helpStep1Title')}:</strong> ${t('helpStep1Desc')}</li>
+            <li><strong>${t('helpStep2Title')}:</strong> ${t('helpStep2Desc')}</li>
+            <li><strong>${t('helpStep3Title')}:</strong> ${t('helpStep3Desc')}</li>
+            <li><strong>${t('helpStep4Title')}:</strong> ${t('helpStep4Desc')}</li>
+            <li><strong>${t('helpStep5Title')}:</strong> ${t('helpStep5Desc')}</li>
+            <li><strong>${t('helpStep6Title')}:</strong> ${t('helpStep6Desc')}</li>
+        </ul>
+      `;
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

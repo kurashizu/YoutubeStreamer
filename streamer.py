@@ -12,8 +12,8 @@ import psutil
 VERSION_STRING = "v1.4"
 
 class Streamer:
-    def __init__(self, RTMP_BASE_URL = "rtmp://srs.022025.xyz/live/",
-                 RTMP_STREAM_KEY = "yt",
+    def __init__(self, RTMP_BASE_URL = "",
+                 RTMP_STREAM_KEY = "",
                  perfmon = None):
         
         self.version = VERSION_STRING

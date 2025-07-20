@@ -6,12 +6,14 @@ from streamer import Streamer
 import time
 from perfmonitor import PerfMon
 
+RTMP_BASE_URL = "rtmp://xxx"
+
 app = flask.Flask(__name__)
 perfmon = PerfMon()
 streamers = {
-    "yt": Streamer(RTMP_STREAM_KEY="yt", perfmon=perfmon),
-    "yt_aux1": Streamer(RTMP_STREAM_KEY="yt_aux1", perfmon=perfmon),
-    "yt_aux2": Streamer(RTMP_STREAM_KEY="yt_aux2", perfmon=perfmon),
+    "yt": Streamer(RTMP_BASE_URL=RTMP_BASE_URL, RTMP_STREAM_KEY="yt", perfmon=perfmon),
+    "yt_aux1": Streamer(RTMP_BASE_URL=RTMP_BASE_URL, RTMP_STREAM_KEY="yt_aux1", perfmon=perfmon),
+    "yt_aux2": Streamer(RTMP_BASE_URL=RTMP_BASE_URL, RTMP_STREAM_KEY="yt_aux2", perfmon=perfmon),
 }
 
 @atexit.register

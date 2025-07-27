@@ -63,6 +63,15 @@ def enqueue():
         return flask.jsonify({"message": "No URL provided."}), 400
     
     bitrate = flask.request.args.get('bitrate')
+    # limit bitrate < 10000k
+    if bitrate:
+        try:
+            int_bitrate = int(bitrate.replace('k', ''))
+        except ValueError:
+            return flask.jsonify({"message": "Invalid bitrate format."}), 400
+        if int_bitrate > 10000:
+            return flask.jsonify({"message": "Bitrate too high. Maximum 10000k."}), 400
+            
     audioOnly = flask.request.args.get('audioOnly')
     if audioOnly == "true":
         bitrate = "600k"

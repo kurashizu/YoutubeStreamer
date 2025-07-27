@@ -54,6 +54,8 @@ class Streamer:
 
         self.USER_AGENT_STRING = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
 
+        self.font_file = "./font.ttc"
+
         threading.Thread(target=self._worker_playlist, daemon=True).start()
         pass
 
@@ -95,9 +97,6 @@ class Streamer:
                 raise RuntimeError(f"An unexpected error occurred: {e}")
                 
             output_lines = process.stdout.strip().split('\n')
-
-            for i in output_lines:
-                print(i)
             
             if len(output_lines) != 6:
                 raise ValueError("Unexpected output format")
@@ -285,14 +284,14 @@ class Streamer:
                     if not metadata["stream_audioOnly"] else "Audio Only\n")
             f.write(r"Progress: %{eif:t+" + metadata["start_time"] + r":d} / " + f"{metadata['total_time']} (s)\n")
 
-        vf = f"drawtext=fontfile=./font.ttc:textfile='{self.watermark_header.name}'"
+        vf = f"drawtext=fontfile={self.font_file}:textfile='{self.watermark_header.name}'"
         vf += ":x=20:y=20:borderw=2:bordercolor=black:fontcolor=white:fontsize=18:shadowcolor=black@0.5:shadowx=2:shadowy=2,"
-        vf += f"drawtext=fontfile=./font.ttc:textfile='{self.watermark_playlist.name}':reload=1"
+        vf += f"drawtext=fontfile={self.font_file}:textfile='{self.watermark_playlist.name}':reload=1"
         vf += ":x=20:y=h-th-20:borderw=2:bordercolor=black:fontcolor=white:fontsize=18:shadowcolor=black@0.5:shadowx=2:shadowy=2,"
 
         if metadata["stream_audioOnly"]:
             # if audio only, show "Audio Only" watermark in the center
-            vf += f"drawtext=fontfile=./font.ttc:text='Audio Only':x=(w-text_w)/2:y=(h-text_h)/2:fontsize=48:fontcolor=white:box=1:boxcolor=black@0.5:boxborderw=5,"
+            vf += f"drawtext=fontfile={self.font_file}:text='Audio Only':x=(w-text_w)/2:y=(h-text_h)/2:fontsize=48:fontcolor=white:box=1:boxcolor=black@0.5:boxborderw=5,"
 
         vf += "format=nv12,hwupload"
 
@@ -402,11 +401,11 @@ class Streamer:
         """
         Start an idle streamer process (ffmpeg)
         """
-        vf = f"drawtext=fontfile=./font.ttc"
+        vf = f"drawtext=fontfile={self.font_file}"
         vf += f":text='Youtube Streamer {self.version_string}@{self.get_endpoint_string()} by kurashizu\nNo video playing | "
         vf += r"%{localtime}'"
         vf += f":x=(w-text_w)/2:y=(h-text_h)/2:fontsize=48:fontcolor=white:box=1:boxcolor=black@0.5:boxborderw=5,"
-        vf += f"drawtext=fontfile=./font.ttc"
+        vf += f"drawtext=fontfile={self.font_file}"
         vf += f":textfile='{self.watermark_playlist.name}':reload=1"
         vf += f":x=20:y=h-th-20:fontsize=18:fontcolor=white:box=1:boxcolor=black@0.5:boxborderw=2,"
         vf += "format=nv12,hwupload"
@@ -469,9 +468,7 @@ if __name__ == "__main__":
         
     # Example usage:
     # Add a video to the queue
-    print(1111)
     time.sleep(20)
-    print(2222222)
     s.add_to_queue(url="https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=150", stream_bitrate="1200k")
 
     # Get the current queue

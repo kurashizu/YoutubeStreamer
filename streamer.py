@@ -277,10 +277,10 @@ class Streamer:
         """
 
         with open(self.watermark_header.name, 'w') as f:
-            f.write(f"Youtube Streamer {self.version_string}@{self.get_endpoint_string()} (by kurashizu)\n")
+            f.write(f"Youtube Streamer (by kurashizu) {self.version_string} @{self.get_endpoint_string()}\n")
             escaped_title = metadata['title'].replace('\\', '\\\\').replace('%', '\\%')
             f.write(f"Title: {escaped_title}\n")
-            f.write(f"Re-encoded: [Bitrate: {metadata['stream_bitrate']} (bps), FPS: {metadata['stream_FPS']}, GOP: {metadata['stream_GOP']}]\n"
+            f.write(f"{metadata['stream_bitrate']}bps, FPS: {metadata['stream_FPS']}, GOP: {metadata['stream_GOP']}\n"
                     if not metadata["stream_audioOnly"] else "Audio Only\n")
             f.write(r"Progress: %{eif:t+" + metadata["start_time"] + r":d} / " + f"{metadata['total_time']} (s)\n")
 
@@ -402,7 +402,7 @@ class Streamer:
         Start an idle streamer process (ffmpeg)
         """
         vf = f"drawtext=fontfile={self.font_file}"
-        vf += f":text='Youtube Streamer {self.version_string}@{self.get_endpoint_string()} by kurashizu\nNo video playing | "
+        vf += f":text='Youtube Streamer (by kurashizu) {self.version_string} @{self.get_endpoint_string()}\nNo video playing | "
         vf += r"%{localtime}'"
         vf += f":x=(w-text_w)/2:y=(h-text_h)/2:fontsize=48:fontcolor=white:box=1:boxcolor=black@0.5:boxborderw=5,"
         vf += f"drawtext=fontfile={self.font_file}"

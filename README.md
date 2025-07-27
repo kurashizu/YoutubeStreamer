@@ -1,9 +1,10 @@
-# RTMP Queue Streamer
+# Youtube Streamer
 
 这是一个基于 `yt-dlp` 和 `ffmpeg` 的网络视频推流工具。它提供了一个简单的Web界面，用于管理视频播放队列，并将来自YouTube、Bilibili等网站的视频流实时转码并推送到指定的RTMP服务器。
 
 ## ✨ 功能特性
 
+- **支持多平台**: 目前支持从YouTube、Bilibili等多种视频网站获取视频与直播源~~（甚至支持P*rnH*b）~~。
 - **Web操作界面**: 通过网页轻松管理播放列表和推流状态。
 - **视频队列系统**: 支持将多个视频URL添加到播放队列，自动按顺序播放。
 - **多平台支持**: 利用 `yt-dlp`，支持从YouTube、Bilibili等多种视频网站获取视频源。

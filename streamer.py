@@ -1,22 +1,23 @@
-# YOUTUBE_VIDEO_URL="https://youtu.be/rvoMcy62AX0?si=M7lJqiGW8NYu_tS3"
 
 import threading
+import datetime
 import subprocess
 import json
 import re
 import tempfile
 import time
 import os
-import psutil
-
-VERSION_STRING = "v1.4"
 
 class Streamer:
     def __init__(self, RTMP_BASE_URL = "",
                  RTMP_STREAM_KEY = "",
-                 perfmon = None):
+                 perfmon = None,
+                 version_string = "",
+                 ytdlp_cookie_youtube = None,
+                 ytdlp_cookie_bilibili = None,
+                 ):
         
-        self.version = VERSION_STRING
+        self.version_string = version_string
 
         self.perfmon = perfmon
 
@@ -43,14 +44,15 @@ class Streamer:
         self.watermark_playlist = tempfile.NamedTemporaryFile(mode='w+t', delete=True, dir=tempfile.gettempdir())
 
         self.IDLE_STREAM_FPS = 60
-        self.IDLE_STREAM_GOP = 300
+        self.IDLE_STREAM_GOP = 120
 
-        self.YTDLP_COOKIE_YOUTUBE = "./www.youtube.com_cookies.txt"
-        self.YTDLP_COOKIE_BILIBILI = "./www.bilibili.com_cookies.txt"
+        self.YTDLP_COOKIE_YOUTUBE = ytdlp_cookie_youtube
+        self.YTDLP_COOKIE_BILIBILI = ytdlp_cookie_bilibili
 
-        self.YTDLP_FILTER_STRING = "bestvideo[height<=1080][ext=mp4][vcodec^=avc]/b,bestaudio[ext=m4a]/b"
+        self.YTDLP_FILTER_STRING = "bestvideo[height<=1080][ext=mp4][fps<=60][vcodec^=avc]/b,bestaudio[ext=m4a]/b"
+        self.YTDLP_FILTER_STRING_LOW = "bestvideo[height<=360][ext=mp4][fps<=60][vcodec^=avc]/b,bestaudio[ext=m4a]/b"
 
-        self.USER_AGENT_STRING = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 Edg/132.0.0.0"
+        self.USER_AGENT_STRING = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
 
         threading.Thread(target=self._worker_playlist, daemon=True).start()
         pass
@@ -59,14 +61,14 @@ class Streamer:
                     stream_bitrate: str = "1200k",
                     stream_audioOnly: bool = False,
                     stream_FPS: int = 60,
-                    stream_GOP: int = 300,
+                    stream_GOP: int = 120,
                     index: int = None,) -> dict:
         """
         Add an item to queue at the index position
         If index is None, add to the end of the queue
         """
 
-        def _get_metadata(url: str = "", cookie_file: str = None) -> dict:
+        def _get_metadata(url: str = "", cookie_file: str = None, filter_string: str = self.YTDLP_FILTER_STRING) -> dict:
             """
             Get the metadata of a video by using yt-dlp
             """
@@ -100,9 +102,9 @@ class Streamer:
             if len(output_lines) != 6:
                 raise ValueError("Unexpected output format")
 
-            if not output_lines[2].startswith("https://"):
+            if not output_lines[2].startswith("http"):
                 raise ValueError("Invalid video URL")
-            if not output_lines[5].startswith("https://"):
+            if not output_lines[5].startswith("http"):
                 raise ValueError("Invalid audio URL")
             
             start_time_match = re.search(r'[?&]t=(\d+)', url)
@@ -133,9 +135,20 @@ class Streamer:
             cookie_file = self.YTDLP_COOKIE_YOUTUBE
         elif "bilibili.com" in valid_url:
             cookie_file = self.YTDLP_COOKIE_BILIBILI
+
+        # determine if it's music (not video)
+        musicOnly = False
+        if "music.163.com" in valid_url:
+            musicOnly = True
         
+        # determine filter string
+        if "bilibili.com" in valid_url:
+            filter_string = self.YTDLP_FILTER_STRING
+        else:
+            filter_string = self.YTDLP_FILTER_STRING
+
         try:
-            metadata = _get_metadata(valid_url, cookie_file)
+            metadata = _get_metadata(valid_url, cookie_file, filter_string)
         except (TimeoutError, RuntimeError, ValueError) as e:
             print(str(e))
             return {
@@ -144,10 +157,18 @@ class Streamer:
             }
         
         metadata["stream_bitrate"] = stream_bitrate
-        metadata["stream_audioOnly"] = stream_audioOnly
+        metadata["stream_audioOnly"] = stream_audioOnly or musicOnly
         metadata["stream_FPS"] = stream_FPS
         metadata["stream_GOP"] = stream_GOP
-        
+
+        # Add addition metadata
+        if "bilibili.com" in valid_url:
+            metadata["header"] = {
+                "Origin": "https://www.bilibili.com",
+                "Referer": f"{valid_url}",
+                "User-Agent": self.USER_AGENT_STRING,
+            }
+
         if index is None or index >= len(self.queue):
             self.queue.append(metadata)
         else:
@@ -237,12 +258,12 @@ class Streamer:
 
     def _thread_streamer_log_stdout(self, stdout, stderr):
         for line in iter(stdout.readline, b''):
-            self.streamer_log["stdout"].append(line.decode('utf-8').strip())
+            self.streamer_log["stdout"].append(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {line.decode('utf-8').strip()}")
         pass
 
     def _thread_streamer_log_stderr(self, stdout, stderr):
         for line in iter(stderr.readline, b''):
-            self.streamer_log["stderr"].append(line.decode('utf-8').strip())
+            self.streamer_log["stderr"].append(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {line.decode('utf-8').strip()}")
         pass
 
     def get_endpoint_string(self):
@@ -257,7 +278,7 @@ class Streamer:
         """
 
         with open(self.watermark_header.name, 'w') as f:
-            f.write(f"Youtube Streamer {VERSION_STRING}@{self.get_endpoint_string()} (by kurashizu)\n")
+            f.write(f"Youtube Streamer {self.version_string}@{self.get_endpoint_string()} (by kurashizu)\n")
             escaped_title = metadata['title'].replace('\\', '\\\\').replace('%', '\\%')
             f.write(f"Title: {escaped_title}\n")
             f.write(f"Re-encoded: [Bitrate: {metadata['stream_bitrate']} (bps), FPS: {metadata['stream_FPS']}, GOP: {metadata['stream_GOP']}]\n"
@@ -265,9 +286,9 @@ class Streamer:
             f.write(r"Progress: %{eif:t+" + metadata["start_time"] + r":d} / " + f"{metadata['total_time']} (s)\n")
 
         vf = f"drawtext=fontfile=./font.ttc:textfile='{self.watermark_header.name}'"
-        vf += ":x=20:y=20:borderw=2:bordercolor=black:fontcolor=white:fontsize=24:shadowcolor=black@0.5:shadowx=2:shadowy=2,"
+        vf += ":x=20:y=20:borderw=2:bordercolor=black:fontcolor=white:fontsize=18:shadowcolor=black@0.5:shadowx=2:shadowy=2,"
         vf += f"drawtext=fontfile=./font.ttc:textfile='{self.watermark_playlist.name}':reload=1"
-        vf += ":x=20:y=h-th-20:borderw=2:bordercolor=black:fontcolor=white:fontsize=24:shadowcolor=black@0.5:shadowx=2:shadowy=2,"
+        vf += ":x=20:y=h-th-20:borderw=2:bordercolor=black:fontcolor=white:fontsize=18:shadowcolor=black@0.5:shadowx=2:shadowy=2,"
 
         if metadata["stream_audioOnly"]:
             # if audio only, show "Audio Only" watermark in the center
@@ -279,20 +300,32 @@ class Streamer:
             "-loglevel", "warning",
             "-init_hw_device", "vaapi=va:/dev/dri/renderD128",
             "-hwaccel", "vaapi",
-            "-re",
+            "-re",]
+        
+        if metadata["stream_audioOnly"]:
+            # if audio only, use black screen input
+            command += ["-f", "lavfi", "-i", f"color=c=black:s=1920x1080:r={metadata['stream_FPS']}"]
+        else:
+            command += ["-fflags", "+genpts",
+                "-reconnect", "1", "-reconnect_streamed", "1", "-reconnect_delay_max", "5", "-reconnect_on_network_error", "1",
+                "-ss", metadata["start_time"],]
+            if metadata.get("header", None):
+                header_string = ""
+                for key, value in metadata["header"].items():
+                    header_string += f"{key}: {value}\r\n"
+                command += ["-headers", header_string]
+            command += ["-i", metadata["stream_url_video"]]
 
-            *(["-fflags", "+genpts",
-            "-reconnect", "1", "-reconnect_streamed", "1", "-reconnect_delay_max", "5",
-            "-ss", metadata["start_time"],
-            "-i", metadata["stream_url_video"]] if not metadata["stream_audioOnly"] else [
-            # black screen input
-            "-f", "lavfi", "-i", f"color=c=black:s=1920x1080:r={metadata['stream_FPS']}",
-            ]),
-            
+        command +=[
             "-fflags", "+genpts",
-            "-reconnect", "1", "-reconnect_streamed", "1", "-reconnect_delay_max", "5",
-            "-ss", metadata["start_time"],
-            "-i", metadata["stream_url_audio"],
+            "-reconnect", "1", "-reconnect_streamed", "1", "-reconnect_delay_max", "5", "-reconnect_on_network_error", "1",
+            "-ss", metadata["start_time"],]
+        if metadata.get("header", None):
+            header_string = ""
+            for key, value in metadata["header"].items():
+                header_string += f"{key}: {value}\r\n"
+            command += ["-headers", header_string]
+        command += ["-i", metadata["stream_url_audio"],
             "-vf", vf,
             "-c:v", "h264_vaapi", "-b:v", metadata["stream_bitrate"], "-maxrate", metadata["stream_bitrate"],
             "-bufsize", str(int(re.sub(r'k$', r'', metadata["stream_bitrate"])) * 2) + "k",
@@ -370,19 +403,19 @@ class Streamer:
         Start an idle streamer process (ffmpeg)
         """
         vf = f"drawtext=fontfile=./font.ttc"
-        vf += f":text='Youtube Streamer {VERSION_STRING}@{self.get_endpoint_string()} by kurashizu\nNo video playing | "
+        vf += f":text='Youtube Streamer {self.version_string}@{self.get_endpoint_string()} by kurashizu\nNo video playing | "
         vf += r"%{localtime}'"
         vf += f":x=(w-text_w)/2:y=(h-text_h)/2:fontsize=48:fontcolor=white:box=1:boxcolor=black@0.5:boxborderw=5,"
         vf += f"drawtext=fontfile=./font.ttc"
         vf += f":textfile='{self.watermark_playlist.name}':reload=1"
-        vf += f":x=20:y=h-th-20:fontsize=24:fontcolor=white:box=1:boxcolor=black@0.5:boxborderw=2,"
+        vf += f":x=20:y=h-th-20:fontsize=18:fontcolor=white:box=1:boxcolor=black@0.5:boxborderw=2,"
         vf += "format=nv12,hwupload"
         command = ["ffmpeg",
             "-loglevel", "warning",
             "-init_hw_device", "vaapi=va:/dev/dri/renderD128",
             "-hwaccel", "vaapi",
             "-re",
-            "-f", "lavfi", "-i", "color=c=black:s=1920x1080:r=30", # Black screen input
+            "-f", "lavfi", "-i", f"color=c=black:s=1920x1080:r={self.IDLE_STREAM_FPS}", # Black screen input
             "-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo", # Audio input
             "-vf", vf,
             "-c:v", "h264_vaapi", "-b:v", "1200k", "-maxrate", "1200k",

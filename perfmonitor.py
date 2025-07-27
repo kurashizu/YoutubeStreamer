@@ -9,13 +9,13 @@ class PerfMon:
         self._last_net_up = 0
         self._last_net_down = 0
 
-        self.performance_string = "Time: dd/mm/yy HH:MM:SS | CPU: xx% | MEM: xx/xx GB | SWAP: xx/xx GB | NET U-xxkbps D-xx (K/s)"
+        self.performance_string = "Time: dd/mm/yy HH:MM:SS | CPU: xx% | MEM: xx/xx GB | SWAP: xx/xx GB | NET U-xxkbps D-xx (k/s)"
         self.lock = threading.Lock()
 
         threading.Thread(target=self._worker_performance_string, daemon=True).start()
 
     def _worker_performance_string(self) -> str:
-        # Time: dd/mm/yy HH:MM:SS | CPU: xx% | MEM: xx/xx GB | SWAP: xx/xx GB | NET U-xxkbps D-xxK/s
+        # Time: dd/mm/yy HH:MM:SS | CPU: xx% | MEM: xx/xx GB | SWAP: xx/xx GB | NET U-xxkbps D-xxk/s
         while True:
             cpu_usage = psutil.cpu_percent(interval=self.interval)
             mem = psutil.virtual_memory()
@@ -34,7 +34,8 @@ class PerfMon:
             self._last_net_down = net_io.bytes_recv
             
             with self.lock:
-                self.performance_string = f"Time: {time.strftime('%d/%m/%y %H:%M:%S', time.localtime())} | CPU: {cpu_usage}% | MEM: {mem_used:.2f}/{mem_total:.2f} GB | SWAP: {swap_used:.2f}/{swap_total:.2f} GB | NET up-{net_up:.2f} down-{net_down:.2f} (K/s)"
+                self.performance_string = "https://github.com/kurashizu/YoutubeStreamer\n"
+                self.performance_string += f"Time: {time.strftime('%d/%m/%y %H:%M:%S', time.localtime())} | CPU: {cpu_usage}% | MEM: {mem_used:.2f}/{mem_total:.2f} GB | SWAP: {swap_used:.2f}/{swap_total:.2f} GB | NET up-{net_up:.2f} down-{net_down:.2f} (k/s)"
 
     def get_performance_string(self) -> str:
         with self.lock:

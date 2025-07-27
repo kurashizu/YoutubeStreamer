@@ -231,6 +231,12 @@
     .close-button:hover, .close-button:focus {
       color: black;
     }
+    .url-note {
+      display: block;
+      font-size: 0.9em;
+      color: #6c757d;
+      margin-top: 8px;
+    }
     .endpoint-selector-wrapper {
       display: flex;
       align-items: center;
@@ -274,9 +280,9 @@
       <div class="input-group" style="gap: 10px; margin-bottom: 16px;">
         <label for="endpointSelector" data-i18n="endpointLabel" style="margin-right: 8px;"><b>Endpoint:</b></label>
         <select id="endpointSelector">
-          <option value="yt" data-i18n="endpointPrimary">primary</option>
-          <option value="yt_aux1" data-i18n="endpointAux1">yt_aux1</option>
-          <option value="yt_aux2" data-i18n="endpointAux2">yt_aux2</option>
+          {% for endpoint in endpoints %}
+          <option value="{{ endpoint }}">{{ endpoint }}</option>
+          {% endfor %}
         </select>
         <label for="bitrateInput" data-i18n="bitrateLabel" style="margin: 0 8px 0 16px;">Target Bitrate (bps):</label>
         <select id="bitrateInput" style="width: 160px;">
@@ -311,17 +317,18 @@
     <hr>
 
     <h2 data-i18n="copyUrlsTitle">Copy Stream URLs</h2>
-    <div class="copy-button-group">
-      <button id="copyJpUrlButton">Japan</button>
-      <button id="copyAuUrlButton">Australia</button>
-      <button id="copyCfUrlButton">CloudflareAnycast</button>
+    <div class="copy-button-group" id="copyUrlButtons">
+      {% for distributor in distributors %}
+      <button data-baseurl="{{ distributor.base_url }}">{{ distributor.name }}</button>
+      {% endfor %}
     </div>
+    <small class="url-note" data-i18n="cfOptimisedNote"></small>
 
     <hr>
 
     <footer style="text-align: center; padding: 10px 0; font-size: 0.9em; color: #6c757d;">
       <p style="margin: 0;">
-        Author: <a href="https://www.022025.xyz" target="_blank" rel="noopener noreferrer">Kurashizu</a>,
+        Author: <a href="https://github.com/kurashizu/YoutubeStreamer" target="_blank" rel="noopener noreferrer">Kurashizu</a>,
         Powered by SRS(Simple Realtime Server), ffmpeg.
       </p>
       <p id="versionFooter" style="margin: 5px 0 0;"></p>
@@ -351,19 +358,8 @@
   </div>
 
   <script>
-  const VERSION = 'v1.4';
-  const API = 'https://home.022025.xyz/ytapi';
-
-  // 动态获取 m3u8 链接
-  function getJpUrl() {
-    return `https://srsjp.022025.xyz/live/${ENDPOINT}.m3u8`;
-  }
-  function getAuUrl() {
-    return `https://srs.022025.xyz/live/${ENDPOINT}.m3u8`;
-  }
-  function getCfUrl() {
-    return `https://cfsrs.022025.xyz/live/${ENDPOINT}.m3u8`;
-  }
+  const VERSION = {{ version|tojson }};
+  const API = {{ api_url|tojson }};
 
   // 全局 endpoint 变量，初始值从 localStorage 读取
   let ENDPOINT = localStorage.getItem('ytStreamManagerEndpoint') || 'yt_aux1';
@@ -425,10 +421,7 @@
         helpStep5Desc: "Click this button to stop the current stream immediately. The auto-play worker will be stopped.",
         helpStep6Title: "Copy Stream URL",
         helpStep6Desc: "Use the green buttons at the bottom to copy the M3U8 stream URL for your player (e.g., VRChat, OBS).",
-        endpointLabel: "Endpoint:",
-        endpointPrimary: "primary",
-        endpointAux1: "yt_aux1",
-        endpointAux2: "yt_aux2"
+        cfOptimisedNote: "For users in Mainland China, CloudflareCDN or EdgeOneCDN is recommended."
       },
       zh: {
         pageTitle: "YouTube直播流管理器",
@@ -485,10 +478,7 @@
         helpStep5Desc: "点击此按钮可立即停止当前的直播流。自动播放进程也将停止。",
         helpStep6Title: "复制直播流地址",
         helpStep6Desc: "使用底部的绿色按钮复制M3U8直播流地址，以便在您的播放器（如VRChat、OBS）中使用。",
-        endpointLabel: "端点：",
-        endpointPrimary: "主线路",
-        endpointAux1: "辅助1",
-        endpointAux2: "辅助2"
+        cfOptimisedNote: "中国大陆用户建议使用 CloudflareCDN 或 EdgeOneCDN。"
       },
       "zh-TW": {
         pageTitle: "YouTube 直播串流管理員",
@@ -545,10 +535,7 @@
         helpStep5Desc: "點擊此按鈕可立即停止目前的直播串流。自動播放程序也將停止。",
         helpStep6Title: "複製串流網址",
         helpStep6Desc: "使用底部的綠色按鈕複製M3U8直播串流網址，以便在您的播放器（如VRChat、OBS）中使用。",
-        endpointLabel: "端點：",
-        endpointPrimary: "主線路",
-        endpointAux1: "輔助1",
-        endpointAux2: "輔助2"
+        cfOptimisedNote: "中國大陸使用者建議使用 CloudflareCDN 或 EdgeOneCDN。"
       },
       ja: {
         pageTitle: "YouTubeストリームマネージャー",
@@ -605,10 +592,7 @@
         helpStep5Desc: "このボタンをクリックすると、現在のストリームが直ちに停止します。自動再生ワーカーも停止します。",
         helpStep6Title: "ストリームURLのコピー",
         helpStep6Desc: "下部にある緑色のボタンを使用して、プレーヤー（VRChat、OBSなど）用のM3U8ストリームURLをコピーします。",
-        endpointLabel: "エンドポイント：",
-        endpointPrimary: "プライマリ",
-        endpointAux1: "補助1",
-        endpointAux2: "補助2"
+        cfOptimisedNote: "中国本土のユーザーは、CloudflareCDN または EdgeOneCDN の使用をお勧めします。"
       }
     };
 
@@ -626,9 +610,6 @@
       statusDisplay: el('statusDisplay'),
       statusMessage: el('statusMessage'),
       playlist: el('playlistQueue'),
-      copyJp: el('copyJpUrlButton'),
-      copyAu: el('copyAuUrlButton'),
-      copyCf: el('copyCfUrlButton'),
       helpButton: el('helpButton'),
       helpModal: el('helpModal'),
       closeHelpButton: el('closeHelpButton'),
@@ -662,12 +643,42 @@
     }
 
     async function copyToClipboard(text) {
+      // 优先使用现代、安全的剪贴板API (仅在HTTPS或localhost下可用)
+      if (navigator.clipboard && window.isSecureContext) {
+        try {
+          await navigator.clipboard.writeText(text);
+          showMsg('copySuccess', 'success');
+          return; // 成功后直接返回
+        } catch (err) {
+          console.error('Async clipboard API failed, falling back.', err);
+          // 如果失败，则继续执行下面的后备方案
+        }
+      }
+
+      // 后备方案：适用于旧版浏览器或不安全的HTTP环境
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      // 将输入框移出屏幕外，使其不可见
+      textArea.style.position = "fixed";
+      textArea.style.top = "-9999px";
+      textArea.style.left = "-9999px";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+
       try {
-        await navigator.clipboard.writeText(text);
-        showMsg('copySuccess', 'success');
-      } catch {
+        const successful = document.execCommand('copy');
+        if (successful) {
+          showMsg('copySuccess', 'success');
+        } else {
+          showMsg('copyFail', 'error');
+        }
+      } catch (err) {
+        console.error('Fallback copy method failed:', err);
         showMsg('copyFail', 'error');
       }
+
+      document.body.removeChild(textArea);
     }
 
     function updateQueue(list) {
@@ -724,7 +735,7 @@
 
     async function fetchAndRenderStatus() {
       try {
-        const data = await api('/status');
+        const data = await api('/streamer/status');
         updateQueue(data.playlist.queue);
         updateStatus(data.runner);
       } catch (err) {
@@ -742,7 +753,7 @@
 
     async function handleRemoveItem(index) {
       try {
-        await api(`/dequeue?index=${index}`);
+        await api(`/streamer/dequeue?index=${index}`);
         showMsg('itemRemoved', 'success');
         fetchAndRenderStatus(); // Refresh state after successful removal
       } catch (error) {
@@ -760,7 +771,7 @@
       ui.addButton.disabled = true; // Prevent double-clicking
 
       try {
-        let apiUrl = `/enqueue?url=${encodeURIComponent(url)}&bitrate=${bitrate}`;
+        let apiUrl = `/streamer/enqueue?url=${encodeURIComponent(url)}&bitrate=${bitrate}`;
         if (audioOnly) {
           apiUrl += '&audioOnly=true';
         }
@@ -778,7 +789,7 @@
     async function handleTerminate() {
       ui.terminate.disabled = true;
       try {
-        const data = await api('/terminate');
+        const data = await api('/streamer/terminate');
         showMsg(data.message, 'success'); // Keep original message as it's from backend
         // Wait a moment for the process to die before refreshing
         setTimeout(fetchAndRenderStatus, 500);
@@ -894,9 +905,19 @@
     function init() {
       ui.addButton.onclick = handleAddItem;
       ui.terminate.onclick = handleTerminate;
-      ui.copyJp.onclick = () => copyToClipboard(getJpUrl());
-      ui.copyAu.onclick = () => copyToClipboard(getAuUrl());
-      ui.copyCf.onclick = () => copyToClipboard(getCfUrl());
+
+      // Dynamic copy buttons handler using event delegation
+      const copyButtonGroup = document.getElementById('copyUrlButtons');
+      if (copyButtonGroup) {
+        copyButtonGroup.addEventListener('click', (event) => {
+          const button = event.target.closest('button');
+          if (button && button.dataset.baseurl) {
+            const baseUrl = button.dataset.baseurl;
+            const streamUrl = `${baseUrl}${ENDPOINT}.m3u8`;
+            copyToClipboard(streamUrl);
+          }
+        });
+      }
 
       // Endpoint 选择器联动
       const endpointSelector = document.getElementById('endpointSelector');
@@ -972,7 +993,6 @@
         }
       });
       document.title = `${getTranslatedString('pageTitle')} ${VERSION}`;
-      updateBitrateOptions();
       updateHelpContent(lang);
     }
 

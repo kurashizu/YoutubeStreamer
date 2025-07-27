@@ -5,15 +5,38 @@ import atexit
 from streamer import Streamer
 import time
 from perfmonitor import PerfMon
+import json
+import os
 
-RTMP_BASE_URL = "rtmp://xxx"
+# Load configuration from config.json
+config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.json')
+with open(config_path, 'r') as f:
+    config = json.load(f)
 
-app = flask.Flask(__name__)
+# Get config values, allowing environment variables to override them
+VERSION_STRING = config["version_string"]
+RTMP_BASE_URL = config["rtmp"]["base_url"]
+RTMP_STREAMS = config["rtmp"]["streams"]
+PUBLIC_BASE_URL = config["server"]["public_base_url"]
+DISTRIBUTORS = config["rtmp"]["distributors"]
+LISTENING_ADDR = config["server"]["listening_addr"]
+LISTENING_PORT = config["server"]["listening_port"]
+YTDLP_COOKIE_FILE_YOUTUBE = config["yt-dlp"]["cookie_file"].get("youtube", None)
+YTDLP_COOKIE_FILE_BILIBILI = config["yt-dlp"]["cookie_file"].get("bilibili", None)
+
+app = flask.Flask(__name__, template_folder=os.path.dirname(os.path.abspath(__file__)))
 perfmon = PerfMon()
-streamers = {
-    "yt": Streamer(RTMP_BASE_URL=RTMP_BASE_URL, RTMP_STREAM_KEY="yt", perfmon=perfmon),
-    "yt_aux1": Streamer(RTMP_BASE_URL=RTMP_BASE_URL, RTMP_STREAM_KEY="yt_aux1", perfmon=perfmon),
-    "yt_aux2": Streamer(RTMP_BASE_URL=RTMP_BASE_URL, RTMP_STREAM_KEY="yt_aux2", perfmon=perfmon),
+
+streamers = { # Initialize streamers from config
+    key: Streamer(
+        RTMP_BASE_URL=RTMP_BASE_URL,
+        RTMP_STREAM_KEY=key,
+        perfmon=perfmon,
+        version_string=VERSION_STRING,
+        ytdlp_cookie_youtube=YTDLP_COOKIE_FILE_YOUTUBE,
+        ytdlp_cookie_bilibili=YTDLP_COOKIE_FILE_BILIBILI,
+        )
+    for key in RTMP_STREAMS
 }
 
 @atexit.register
@@ -22,7 +45,11 @@ def _atexit():
         streamer.stop_streamer()
         streamer._stop_idle_streamer()
 
-@app.route('/ytapi/enqueue')
+@app.route('/')
+def index():
+    return flask.render_template('streamer.html', version=VERSION_STRING, api_url=PUBLIC_BASE_URL, endpoints=RTMP_STREAMS, distributors=DISTRIBUTORS)
+
+@app.route('/streamer/enqueue')
 def enqueue():
     endpoint = flask.request.args.get('endpoint')
     if not endpoint:
@@ -48,7 +75,7 @@ def enqueue():
         stream_bitrate=bitrate if bitrate else "1200k",
         stream_audioOnly=audioOnly if audioOnly else False,
         stream_FPS=int(FPS) if FPS else 60,
-        stream_GOP=int(GOP) if GOP else 300,
+        stream_GOP=int(GOP) if GOP else 120,
         index=int(index) if index else None,
     )
     code = 200 if result["success"] else 400
@@ -57,7 +84,7 @@ def enqueue():
         "queue": [item["title"] for item in streamer.get_queue()],
     }), code
 
-@app.route('/ytapi/dequeue')
+@app.route('/streamer/dequeue')
 def dequeue():
     endpoint = flask.request.args.get('endpoint')
     if not endpoint:
@@ -75,7 +102,7 @@ def dequeue():
         "queue": [item["title"] for item in streamer.get_queue()],
     }), code
 
-@app.route('/ytapi/status')
+@app.route('/streamer/status')
 def status():
     endpoint = flask.request.args.get('endpoint')
     if not endpoint:
@@ -92,19 +119,16 @@ def status():
     else:
         output = "No video playing.\n"
 
-    output += f"Version: {streamer.version}\n"
+    output += f"Version: {streamer.version_string}\n"
     output += f"Performance: {perfmon.get_performance_string()}\n"
     output += f"Current Time: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}\n"
 
     output += "\n".join(result["log"]["stdout"])
     if result["log"]["stderr"]:
-        output += "\n--- ERRORS ---\n" + "\n".join(
+        output += "\n--- LOG ---\n" + "\n".join(
             l for l in result["log"]["stderr"] if "Failed to update header" not in l
         )
 
-    if len(output) > 1_000_000:
-        streamer.stop_streamer()
-        output = "Output too large, process killed."
     if not output:
         output = "No output yet."
 
@@ -126,7 +150,7 @@ def status():
         }
     }), code
 
-@app.route('/ytapi/terminate')
+@app.route('/streamer/terminate')
 def terminate():
     endpoint = flask.request.args.get('endpoint')
     if not endpoint:
@@ -138,4 +162,4 @@ def terminate():
     streamer.stop_streamer()
     return flask.jsonify({"message": "Terminated."})
 
-app.run(debug=True, host='0.0.0.0', port=8083, use_reloader=False)
+app.run(debug=True, host=LISTENING_ADDR, port=LISTENING_PORT, use_reloader=False)

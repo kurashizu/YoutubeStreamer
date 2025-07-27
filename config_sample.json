@@ -1,0 +1,50 @@
+{
+    "_comment_main": "This is a sample configuration file. Please copy this to config.json and fill in your actual values. Comments are added as '_comment' keys, which should be ignored by most JSON parsers but make the file easier to understand.",
+    "version_string": "v1.5.0",
+    "_comment_version_string": "The version string displayed on the web interface. It does not affect functionality.",
+
+    "rtmp": {
+        "_comment_rtmp": "This section contains settings for the RTMP push server.",
+        "base_url": "rtmp://your-rtmp-server/live/",
+        "_comment_base_url": "The base URL of your RTMP server. The stream key will be appended to this URL. Example: rtmp://your-rtmp-server/live/",
+        
+        "streams": ["main_stream", "backup_stream"],
+        "_comment_streams": "A list of stream keys. Each key represents an independent streaming endpoint that can be managed via the API. The final push URL will be 'base_url' + 'stream_key'.",
+
+        "distributors": [
+            {
+                "name": "Distributor 1 (e.g., CDN)", 
+                "base_url": "https://cdn1.example.com/live/"
+            },
+            {
+                "name": "Distributor 2 (e.g., another region)", 
+                "base_url": "https://cdn2.example.com/live/"
+            }
+        ],
+        "_comment_distributors": "Optional. A list of alternative playback URLs (e.g., from a CDN or relay server) that will be displayed on the front-end. This helps viewers choose the best server for them. The stream key will be appended to each base_url."
+    },
+
+    "server": {
+        "_comment_server": "This section contains settings for the web API server.",
+        "public_base_url": "https://streamer.example.com",
+        "_comment_public_base_url": "The public-facing URL for this API server. The front-end will use this URL for API calls.",
+        
+        "listening_addr": "0.0.0.0",
+        "_comment_listening_addr": "The IP address for the web server to listen on. '0.0.0.0' means it will listen on all available network interfaces.",
+        
+        "listening_port": 8083,
+        "_comment_listening_port": "The port for the web server to listen on."
+    },
+
+    "yt-dlp": {
+        "_comment_ytdlp": "This section contains settings for the video downloader, yt-dlp.",
+        "cookie_file": {
+            "youtube": "./cookie_files/youtube_cookies.txt",
+            "_comment_youtube_cookie": "Optional. Path to the cookies file for YouTube. Used for downloading age-restricted or members-only videos. You can export this file using a browser extension.",
+            
+            "bilibili": "./cookie_files/bilibili_cookies.txt",
+            "_comment_bilibili_cookie": "Optional. Path to the cookies file for Bilibili. Used for downloading high-resolution or VIP-only content."
+        },
+        "_comment_cookie_file": "Paths are relative to the 'streamer' directory. You will need to create the 'cookie_files' directory and place your cookie files inside."
+    }
+}

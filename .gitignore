@@ -1,7 +1,8 @@
-www.bilibili.com_cookies.txt
-# Bilibili cookies file
-www.youtube.com_cookies.txt
-# YouTube cookies file
+cookie_files/
 
 __pycache__/
 # Python cache files
+
+push.sh
+
+config.json

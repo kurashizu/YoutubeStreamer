@@ -1,4 +1,5 @@
 cookie_files/*
+!cookie_files/.gitkeep
 
 __pycache__/
 # Python cache files

@@ -1,8 +1,6 @@
-cookie_files/
+cookie_files/*
 
 __pycache__/
 # Python cache files
-
-push.sh
 
 config.json

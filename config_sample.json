@@ -1,6 +1,6 @@
 {
     "_comment_main": "This is a sample configuration file. Please copy this to config.json and fill in your actual values. Comments are added as '_comment' keys, which should be ignored by most JSON parsers but make the file easier to understand.",
-    "version_string": "build-25.7.31",
+    "version_string": "(build-25.7.31)",
     "_comment_version_string": "The version string displayed on the web interface. It does not affect functionality.",
 
     "rtmp": {

@@ -21,7 +21,19 @@
                 "base_url": "https://cdn2.example.com/live/"
             }
         ],
-        "_comment_distributors": "Optional. A list of alternative playback URLs (e.g., from a CDN or relay server) that will be displayed on the front-end. This helps viewers choose the best server for them. The stream key will be appended to each base_url."
+        "_comment_distributors": "Optional. A list of alternative playback URLs (e.g., from a CDN or relay server) that will be displayed on the front-end. This helps viewers choose the best server for them. The stream key will be appended to each base_url.",
+
+        "global_fps": 30,
+        "_comment_global_fps": "Default frames per second (FPS) for all streams. Can be overridden by the 'FPS' parameter in the enqueue API call.",
+
+        "global_gop": 60,
+        "_comment_global_gop": "Default Group of Pictures (GOP) size for all streams. A common value is 2 * FPS. Can be overridden by the 'GOP' parameter in the enqueue API call.",
+
+        "idle_stream_width": 1920,
+        "_comment_idle_stream_width": "The width of the idle stream (placeholder video when the queue is empty).",
+
+        "idle_stream_height": 1080,
+        "_comment_idle_stream_height": "The height of the idle stream (placeholder video when the queue is empty)."
     },
 
     "server": {

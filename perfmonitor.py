@@ -34,8 +34,7 @@ class PerfMon:
             self._last_net_down = net_io.bytes_recv
             
             with self.lock:
-                self.performance_string = "https://github.com/kurashizu/YoutubeStreamer\n"
-                self.performance_string += f"Time: {time.strftime('%d/%m/%y %H:%M:%S', time.localtime())} | CPU: {cpu_usage}% | MEM: {mem_used:.2f}/{mem_total:.2f} GB | SWAP: {swap_used:.2f}/{swap_total:.2f} GB | NET up-{net_up:.2f} down-{net_down:.2f} (k/s)"
+                self.performance_string = f"Time: {time.strftime('%d/%m/%y %H:%M:%S', time.localtime())} | CPU: {cpu_usage}% | MEM: {mem_used:.2f}/{mem_total:.2f} GB | SWAP: {swap_used:.2f}/{swap_total:.2f} GB | NET up-{net_up:.2f} down-{net_down:.2f} (k/s)"
 
     def get_performance_string(self) -> str:
         with self.lock:

@@ -15,6 +15,10 @@ class Streamer:
                  version_string = "",
                  ytdlp_cookie_youtube = None,
                  ytdlp_cookie_bilibili = None,
+                 idle_stream_height = 1080,
+                 idle_stream_width = 1920,
+                 idle_stream_fps = 30,
+                 idle_stream_gop = 60,
                  ):
         
         self.version_string = version_string
@@ -38,13 +42,16 @@ class Streamer:
         }
         self.idle_streamer = None
 
+        self.idle_stream_height = idle_stream_height
+        self.idle_stream_width = idle_stream_width
+
         self.current_metadata = None
         self.watermark_header = tempfile.NamedTemporaryFile(mode='w+t', delete=True, dir=tempfile.gettempdir())
         self.watermark_playlist_prewrite = tempfile.NamedTemporaryFile(mode='w+t', delete=True, dir=tempfile.gettempdir())
         self.watermark_playlist = tempfile.NamedTemporaryFile(mode='w+t', delete=True, dir=tempfile.gettempdir())
 
-        self.IDLE_STREAM_FPS = 60
-        self.IDLE_STREAM_GOP = 120
+        self.IDLE_STREAM_FPS = idle_stream_fps
+        self.IDLE_STREAM_GOP = idle_stream_gop
 
         self.YTDLP_COOKIE_YOUTUBE = ytdlp_cookie_youtube
         self.YTDLP_COOKIE_BILIBILI = ytdlp_cookie_bilibili
@@ -56,14 +63,16 @@ class Streamer:
 
         self.font_file = "./font.ttc"
 
+        self.github_url = "Github: https://github.com/kurashizu/YoutubeStreamer"
+
         threading.Thread(target=self._worker_playlist, daemon=True).start()
         pass
 
     def add_to_queue(self, url: str = "",
                     stream_bitrate: str = "1200k",
                     stream_audioOnly: bool = False,
-                    stream_FPS: int = 60,
-                    stream_GOP: int = 120,
+                    stream_FPS: int = 30,
+                    stream_GOP: int = 60,
                     index: int = None,) -> dict:
         """
         Add an item to queue at the index position
@@ -228,8 +237,9 @@ class Streamer:
                         if len(self.queue) > 3:
                             f.write(f"...and {len(self.queue) - 3} more\n")
                     else:
-                        f.write("No video in queue.\n")
-                    f.write("\n" + self.perfmon.get_performance_string().replace("%", "\\%") + "\n")
+                        f.write("No video in queue.\n\n")
+                    f.write(f'{self.github_url.replace(":", "\\:")}\n')
+                    f.write(f'{self.perfmon.get_performance_string().replace("%", "\\%")}\n')
                 os.replace(self.watermark_playlist_prewrite.name, self.watermark_playlist.name)
                 time.sleep(1)
 
@@ -251,6 +261,7 @@ class Streamer:
                     else:
                         # update dynamic watermark for idle streamer
                         with open(self.watermark_playlist_prewrite.name, 'w') as f:
+                            f.write(f'{self.github_url.replace(":", "\\:")}\n')
                             f.write(self.perfmon.get_performance_string().replace("%", "\\%") + "\n")
                         os.replace(self.watermark_playlist_prewrite.name, self.watermark_playlist.name)
                         time.sleep(1)
@@ -277,7 +288,7 @@ class Streamer:
         """
 
         with open(self.watermark_header.name, 'w') as f:
-            f.write(f"Youtube Streamer (by kurashizu) {self.version_string} @{self.get_endpoint_string()}\n")
+            f.write(f"Youtube Streamer {self.version_string} @{self.get_endpoint_string()}\n")
             escaped_title = metadata['title'].replace('\\', '\\\\').replace('%', '\\%')
             f.write(f"Title: {escaped_title}\n")
             f.write(f"{metadata['stream_bitrate']}bps, FPS: {metadata['stream_FPS']}, GOP: {metadata['stream_GOP']}\n"
@@ -303,7 +314,7 @@ class Streamer:
         
         if metadata["stream_audioOnly"]:
             # if audio only, use black screen input
-            command += ["-f", "lavfi", "-i", f"color=c=black:s=1920x1080:r={metadata['stream_FPS']}"]
+            command += ["-f", "lavfi", "-i", f"color=c=black:s={self.idle_stream_width}x{self.idle_stream_height}:r={metadata['stream_FPS']}"]
         else:
             command += ["-fflags", "+genpts",
                 "-reconnect", "1", "-reconnect_streamed", "1", "-reconnect_delay_max", "5", "-reconnect_on_network_error", "1",
@@ -402,7 +413,7 @@ class Streamer:
         Start an idle streamer process (ffmpeg)
         """
         vf = f"drawtext=fontfile={self.font_file}"
-        vf += f":text='Youtube Streamer (by kurashizu) {self.version_string} @{self.get_endpoint_string()}\nNo video playing | "
+        vf += f":text='Youtube Streamer {self.version_string} @{self.get_endpoint_string()}\nNo video playing | "
         vf += r"%{localtime}'"
         vf += f":x=(w-text_w)/2:y=(h-text_h)/2:fontsize=48:fontcolor=white:box=1:boxcolor=black@0.5:boxborderw=5,"
         vf += f"drawtext=fontfile={self.font_file}"
@@ -414,7 +425,7 @@ class Streamer:
             "-init_hw_device", "vaapi=va:/dev/dri/renderD128",
             "-hwaccel", "vaapi",
             "-re",
-            "-f", "lavfi", "-i", f"color=c=black:s=1920x1080:r={self.IDLE_STREAM_FPS}", # Black screen input
+            "-f", "lavfi", "-i", f"color=c=black:s={self.idle_stream_width}x{self.idle_stream_height}:r={self.IDLE_STREAM_FPS}", # Black screen input
             "-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo", # Audio input
             "-vf", vf,
             "-c:v", "h264_vaapi", "-b:v", "1200k", "-maxrate", "1200k",

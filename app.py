@@ -23,6 +23,10 @@ LISTENING_ADDR = config["server"]["listening_addr"]
 LISTENING_PORT = config["server"]["listening_port"]
 YTDLP_COOKIE_FILE_YOUTUBE = config["yt-dlp"]["cookie_file"].get("youtube", None)
 YTDLP_COOKIE_FILE_BILIBILI = config["yt-dlp"]["cookie_file"].get("bilibili", None)
+GLOBAL_FPS = config["rtmp"]["global_fps"]
+GLOBAL_GOP = config["rtmp"]["global_gop"]
+IDLE_STREAM_HEIGHT = config["rtmp"]["idle_stream_height"]
+IDLE_STREAM_WIDTH = config["rtmp"]["idle_stream_width"]
 
 app = flask.Flask(__name__, template_folder=os.path.dirname(os.path.abspath(__file__)))
 perfmon = PerfMon()
@@ -35,6 +39,10 @@ streamers = { # Initialize streamers from config
         version_string=VERSION_STRING,
         ytdlp_cookie_youtube=YTDLP_COOKIE_FILE_YOUTUBE,
         ytdlp_cookie_bilibili=YTDLP_COOKIE_FILE_BILIBILI,
+        idle_stream_height=IDLE_STREAM_HEIGHT,
+        idle_stream_width=IDLE_STREAM_WIDTH,
+        idle_stream_fps=GLOBAL_FPS,
+        idle_stream_gop=GLOBAL_GOP,
         )
     for key in RTMP_STREAMS
 }
@@ -83,8 +91,8 @@ def enqueue():
         url=url,
         stream_bitrate=bitrate if bitrate else "1200k",
         stream_audioOnly=audioOnly if audioOnly else False,
-        stream_FPS=int(FPS) if FPS else 60,
-        stream_GOP=int(GOP) if GOP else 120,
+        stream_FPS=int(FPS) if FPS else GLOBAL_FPS,
+        stream_GOP=int(GOP) if GOP else GLOBAL_GOP,
         index=int(index) if index else None,
     )
     code = 200 if result["success"] else 400

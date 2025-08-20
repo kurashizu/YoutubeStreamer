@@ -169,13 +169,15 @@ class Streamer:
         metadata["stream_FPS"] = stream_FPS
         metadata["stream_GOP"] = stream_GOP
 
+        metadata["header"] = {}
+        metadata["header"]["User-Agent"] = self.USER_AGENT_STRING
+
         # Add addition metadata
         if "bilibili.com" in valid_url:
-            metadata["header"] = {
+            metadata["header"].update({
                 "Origin": "https://www.bilibili.com",
                 "Referer": f"{valid_url}",
-                "User-Agent": self.USER_AGENT_STRING,
-            }
+            })
 
         if index is None or index >= len(self.queue):
             self.queue.append(metadata)
